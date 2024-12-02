@@ -158,13 +158,29 @@ similarity score?
 
 * Implementation
 
-** Part One
-
 #+BEGIN_SRC scheme :tangle historian-hysteria.scm
-  (use-modules (srfi srfi-1))
-  (use-modules (srfi srfi-41))
-  (use-modules (srfi srfi-9))
-  (use-modules (ice-9 format))
+  ;; Advent of Code 2024 -- Code challenge for December 1, 2024
+  ;; Copyright (C) 2024  Michael R. Mauger
+
+  ;; This program is free software: you can redistribute it and/or modify
+  ;; it under the terms of the GNU General Public License as published by
+  ;; the Free Software Foundation, either version 3 of the License, or
+  ;; (at your option) any later version.
+
+  ;; This program is distributed in the hope that it will be useful,
+  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ;; GNU General Public License for more details.
+
+  ;; You should have received a copy of the GNU General Public License
+  ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  (use-modules (srfi srfi-1))  ;; base list
+  (use-modules (srfi srfi-9))  ;; record types
+  (use-modules (srfi srfi-13)) ;; string functions
+  (use-modules (srfi srfi-41)) ;; streams
+
+  (use-modules (ice-9 format)) ;; Guile format
 
   <<read-file>>
   <<parse-the-lists>>
@@ -195,6 +211,7 @@ similarity score?
 
 #+END_SRC
 
+** Part One
 *** Read the data
 #+NAME: read-file
 #+BEGIN_SRC scheme
@@ -220,10 +237,7 @@ similarity score?
   (define-stream (parse-the-lists/s pairs)
     (stream-map
      (lambda (line)
-       (let* ((pair   (remove
-                       (lambda (s)
-                         (string=? "" s))
-                       (string-split line #\space)))
+       (let* ((pair   (remove string-null? (string-split line #\space)))
               (left   (string->number (car pair)))
               (right  (string->number (cadr pair))))
          (cons left right)))
@@ -245,11 +259,11 @@ similarity score?
 *** Calculate the sum of the differences
 #+NAME: calc-sum-of-distances
 #+BEGIN_SRC scheme
+  (define (distance p)
+    (abs (- (cdr p) (car p))))
+
   (define (calc-sum-of-distances pairs)
-    (let* ((dist (map-in-order
-                  (lambda (p)
-                    (abs (- (cdr p) (car p))))
-                  pairs))
+    (let* ((dist (map-in-order distance pairs))
            (sum  (apply + dist)))
       sum))
 
@@ -264,12 +278,12 @@ similarity score?
     (let* ((pairs (stream->list pairs/s))
            (left  (map car pairs))
            (right (map cdr pairs)))
-      (apply +
-             (map
-              (lambda (l)
-                (* l (length
-                      (filter (lambda (r) (= l r)) right))))
-              left))))
+      (define (similarity l)
+        (* l
+           (length
+            (filter (lambda (r) (= l r))
+                    right))))
+      (apply + (map similarity left))))
 
 #+END_SRC
 * Data
