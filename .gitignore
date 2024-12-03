@@ -2,3 +2,5 @@
 
 *.scm
 *.dat
+
+template*.org
