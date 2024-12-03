@@ -1,6 +1,6 @@
 #+TITLE: Red-Nosed Reports
 #+AUTHOR: Michael R. Mauger
-#+DATE: []
+#+DATE: [Mon Dec  2 21:30:27 EST 2024]
 #+STARTUP: showeverything inlineimages
 #+OPTIONS: toc:nil
 #+OPTIONS: ^:{}
