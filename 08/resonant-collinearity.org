@@ -1,0 +1,489 @@
+#+TITLE: Advent of Code 2024
+#+SUBTITLE: Day 8: Resonant Collinearity
+#+AUTHOR: Michael R. Mauger
+#+DATE: [Mon Dec  9 16:50:24 EST 2024]
+#+STARTUP: showeverything inlineimages
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+#+OPTIONS: num:nil
+
+#+AUTO_TANGLE: t
+#+PROPERTY: header-args    :tangle no
+#+PROPERTY: header-args    :noweb no-export
+
+* Day 8: Resonant Collinearity
+
+You find yourselves on the roof of a top-secret Easter Bunny
+installation.
+
+While The Historians do their thing, you take a look at the familiar
+huge antenna. Much to your surprise, it seems to have been
+reconfigured to emit a signal that makes people 0.1% more likely to
+buy Easter Bunny brand Imitation Mediocre Chocolate as a Christmas
+gift! Unthinkable!
+
+Scanning across the city, you find that there are actually many such
+antennas. Each antenna is tuned to a specific frequency indicated by a
+single lowercase letter, uppercase letter, or digit. You create a map
+(your puzzle input) of these antennas. For example:
+
+#+BEGIN_SRC text :tangle example.dat
+............
+........0...
+.....0......
+.......0....
+....0.......
+......A.....
+............
+............
+........A...
+.........A..
+............
+............
+#+END_SRC
+
+The signal only applies its nefarious effect at specific antinodes
+based on the resonant frequencies of the antennas. In particular, an
+antinode occurs at any point that is perfectly in line with two
+antennas of the same frequency - but only when one of the antennas is
+twice as far away as the other. This means that for any pair of
+antennas with the same frequency, there are two antinodes, one on
+either side of them.
+
+So, for these two antennas with frequency a, they create the two
+antinodes marked with #:
+
+#+begin_example
+..........
+...#......
+..........
+....a.....
+..........
+.....a....
+..........
+......#...
+..........
+..........
+#+end_example
+
+Adding a third antenna with the same frequency creates several more
+antinodes. It would ideally add four antinodes, but two are off the
+right side of the map, so instead it adds only two:
+
+#+begin_example
+..........
+...#......
+#.........
+....a.....
+........a.
+.....a....
+..#.......
+......#...
+..........
+..........
+#+end_example
+
+Antennas with different frequencies don't create antinodes; A and a
+count as different frequencies. However, antinodes can occur at
+locations that contain antennas. In this diagram, the lone antenna
+with frequency capital A creates no antinodes but has a
+lowercase-a-frequency antinode at its location:
+
+#+begin_example
+..........
+...#......
+#.........
+....a.....
+........a.
+.....a....
+..#.......
+......A...
+..........
+..........
+#+end_example
+
+The first example has antennas with two different frequencies, so the
+antinodes they create look like this, plus an antinode overlapping the
+topmost A-frequency antenna:
+
+#+begin_example
+......#....#
+...#....0...
+....#0....#.
+..#....0....
+....0....#..
+.#....A.....
+...#........
+#......#....
+........A...
+.........A..
+..........#.
+..........#.
+#+end_example
+
+Because the topmost A-frequency antenna overlaps with a 0-frequency
+antinode, there are 14 total unique locations that contain an antinode
+within the bounds of the map.
+
+Calculate the impact of the signal. How many unique locations within
+the bounds of the map contain an antinode?
+
+** Part Two
+
+Watching over your shoulder as you work, one of The Historians asks if
+you took the effects of resonant harmonics into your calculations.
+
+Whoops!
+
+After updating your model, it turns out that an antinode occurs at any
+grid position exactly in line with at least two antennas of the same
+frequency, regardless of distance. This means that some of the new
+antinodes will occur at the position of each antenna (unless that
+antenna is the only one of its frequency).
+
+So, these three T-frequency antennas now create many antinodes:
+
+#+begin_example
+T....#....
+...T......
+.T....#...
+.........#
+..#.......
+..........
+...#......
+..........
+....#.....
+..........
+#+end_example
+
+In fact, the three T-frequency antennas are all exactly in line with
+two antennas, so they are all also antinodes! This brings the total
+number of antinodes in the above example to 9.
+
+The original example now has 34 antinodes, including the antinodes
+that appear on every antenna:
+
+#+begin_example
+##....#....#
+.#.#....0...
+..#.#0....#.
+..##...0....
+....0....#..
+.#...#A....#
+...#..#.....
+#....#.#....
+..#.....A...
+....#....A..
+.#........#.
+...#......##
+#+end_example
+
+Calculate the impact of the signal using this updated model. How many
+unique locations within the bounds of the map contain an antinode?
+
+
+* Solution
+** Part One
+1. Read the data. Parse it to create an alist with the antenna name as
+   the key, followed by a list of cons pairs containing the location
+   of the antenna.
+2. For each pair of antennas calculate the anti-nodes
+3. Count the unique ant-nodes that are within the map
+
+** Part Two
+1. Same as Part 1 but extend the anti-nodes from 1 to unlimited
+   (essentially no more than the largest map dimension)
+
+* Implementation
+
+#+BEGIN_SRC scheme :tangle resonant-collinearity.scm
+  ;; Advent of Code 2024 -- Code challenge for December 08, 2024
+  ;; Copyright (C) 2024  Michael R. Mauger
+
+  ;; This program is free software: you can redistribute it and/or modify
+  ;; it under the terms of the GNU General Public License as published by
+  ;; the Free Software Foundation, either version 3 of the License, or
+  ;; (at your option) any later version.
+
+  ;; This program is distributed in the hope that it will be useful,
+  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ;; GNU General Public License for more details.
+
+  ;; You should have received a copy of the GNU General Public License
+  ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  (use-modules (srfi srfi-1))  ;; base list
+  (use-modules (srfi srfi-9))  ;; record types
+  (use-modules (srfi srfi-13)) ;; string functions
+  (use-modules (srfi srfi-41)) ;; streams
+
+  (use-modules (ice-9 format)) ;; Guile format
+
+  <<read-file>>
+  <<parse-antennas>>
+  <<find-anti-nodes>>
+  <<count-anti-nodes>>
+
+  (define input-file
+    (let getopts ((args (cdr (command-line))))
+      (if (null? args)
+          "input.dat"
+          (if (string=? "--" (car args))
+              (getopts (cdr args))
+              (car args)))))
+
+  (format #t "Part One: Resonant Collinearity in ~s: ~s~%"
+          input-file
+          (count-anti-nodes
+           (find-anti-nodes
+            1
+            (parse-antennas
+             (read-file/s input-file)))))
+
+  (format #t "Part Two: Resonant Collinearity in ~s: ~s~%"
+          input-file
+          (count-anti-nodes
+           (find-anti-nodes
+            #f
+            (parse-antennas
+             (read-file/s input-file)))))
+
+#+END_SRC
+
+** Part One
+*** Read the data
+#+NAME: read-file
+#+BEGIN_SRC scheme
+  (define-stream (read-file/s filename)
+    (let ((p (open-input-file filename)))
+      (let loop ((c (read-char p))
+                 (line '()))
+        (cond
+         ((eof-object? c)
+          (close-input-port p)
+          stream-null)
+         ((char=? c #\newline)
+          (stream-cons (list->string (reverse line))
+                       (loop (read-char p) '())))
+         (else
+          (loop (read-char p) (cons c line)))))))
+
+#+END_SRC
+
+#+NAME: parse-antennas
+#+BEGIN_SRC scheme
+  (define map-dimensions '())
+
+  (define (parse-antennas mapdata)
+    (let ((antennas '())
+          (r 0)
+          (c 0))
+      <<parse-row>>
+      (set! r 0)
+      (map-in-order parse-row (stream->list mapdata))
+      antennas))
+
+#+END_SRC
+
+#+NAME: parse-row
+#+BEGIN_SRC scheme
+  (define (parse-row rowdata)
+    <<identify-antenna>>
+
+    (set! c 0)
+    ;; (display (list r rowdata #\space))
+    (map-in-order identify-antenna (string->list rowdata))
+    ;; (newline)
+    (set! r (1+ r)))
+
+#+END_SRC
+
+#+NAME: identify-antenna
+#+BEGIN_SRC scheme
+  (define (identify-antenna cell)
+    ;; (display (list c cell))
+    (unless (char=? cell #\.)
+      (let ((ant (assoc cell antennas)))
+        (if ant
+            (set-cdr! ant (cons (cons r c) (cdr ant)))
+            (set! antennas (cons (list cell (cons r c)) antennas)))))
+    (set! map-dimensions (cons r c))
+    (set! c (1+ c)))
+
+#+END_SRC
+
+*** Locate the anti-nodes
+#+NAME: find-anti-nodes
+#+BEGIN_SRC scheme
+  (define (find-anti-nodes limit antennas)
+    <<find-antenna-anti-nodes>>
+
+    (map (lambda (a) (find-antenna-anti-nodes limit a)) antennas))
+
+#+END_SRC
+
+#+NAME: find-antenna-anti-nodes
+#+BEGIN_SRC scheme
+  (define (find-antenna-anti-nodes limit antenna)
+    <<identify-all-anti-nodes>>
+
+    (append
+     (list (car antenna))
+     (identify-all-anti-nodes limit (cdr antenna))))
+
+#+END_SRC
+
+#+NAME: identify-all-anti-nodes
+#+BEGIN_SRC scheme
+  (define (identify-all-anti-nodes limit anchors)
+    <<identify-anti-nodes>>
+
+    (let ((anti-nodes '()))
+      (for-each (lambda (a1)
+                  (for-each (lambda (a2)
+                              (unless (equal? a1 a2)
+                                (let ((n (if limit
+                                             limit
+                                             (max (car map-dimensions)
+                                                  (cdr map-dimensions)))))
+                                  (unless limit
+                                    (set! anti-nodes (cons a1 anti-nodes)))
+                                  (let anti-loop
+                                      ((i 1))
+                                    (when (<= i n)
+                                          (set! anti-nodes
+                                                (cons (identify-anti-nodes i a1 a2)
+                                                      anti-nodes))
+                                          (set! anti-nodes
+                                                (cons (identify-anti-nodes (- i) a1 a2)
+                                                      anti-nodes))
+                                          (anti-loop (1+ i)))))))
+                            anchors))
+                anchors)
+      anti-nodes))
+
+#+END_SRC
+
+#+NAME: identify-anti-nodes
+#+BEGIN_SRC scheme
+  (define (identify-anti-nodes dir a1 a2)
+    (let* ((r1 (car a1))     (c1 (cdr a1))
+           (r2 (car a2))     (c2 (cdr a2))
+           (rdiff (- r2 r1)) (cdiff (- c2 c1)))
+      (cond
+       ((> dir 0)
+        (cons (- r1 (* dir rdiff))
+              (- c1 (* dir cdiff))))
+       ((< dir 0)
+        (cons (+ r2 (* (- dir) rdiff))
+              (+ c2 (* (- dir) cdiff)))))))
+
+#+END_SRC
+
+*** Count unique anti-nodes
+#+NAME: count-anti-nodes
+#+BEGIN_SRC scheme
+  (define (count-anti-nodes antenna-anti-nodes)
+    (define (valid-map-cell cell)
+      (and (<= 0 (car cell) (car map-dimensions))
+           (<= 0 (cdr cell) (cdr map-dimensions))))
+
+    (let ((anti-nodes (append-map (lambda (an) (filter valid-map-cell (cdr an)))
+                                  antenna-anti-nodes))
+          (uniq-nodes '()))
+      (for-each (lambda (an)
+                  (unless (member an uniq-nodes)
+                    (set! uniq-nodes (cons an uniq-nodes))))
+                anti-nodes)
+      (length uniq-nodes)))
+
+#+END_SRC
+
+** Part Two
+
+
+* Data
+
+#+BEGIN_SRC text :tangle input.dat
+  ....................................8.............
+  ..................E...............................
+  .................................g................
+  ...........................................l...b..
+  ..C...........s..............8..........b.........
+  ..................3..1........................b...
+  ............N....3.....................1.....b....
+  .....................N.....8....1..............2..
+  ..q....................................P..........
+  ......................N...........................
+  ...........E.................................l....
+  .............S.....c.............T..2v............
+  .........w....E........q............L.....P.....l.
+  ........w..............................a...V......
+  ...........t..................v..V................
+  .....w.C............................V....4.....L..
+  ........................................I.n..T....
+  .....E.5..C...8....3..q...........................
+  ...............s..0...A........W...........a....T.
+  ...............A................vPT...L..W..e.4...
+  ...........Cw..................2.....G.p.....4....
+  ....S........q........s.............a.............
+  S.............c......e....................V.......
+  ......5...........................................
+  ....5.............................................
+  ...........................I............g.........
+  ...............c.........A........................
+  .................s.............G.............etg..
+  .........5...L.........f...v......W...............
+  ............................0.W.....I........t....
+  ..................................................
+  ...................f...........Q.0................
+  ..............1m9.f..........0........3.........F.
+  ..f...9................B..........................
+  ...........S...........................F......e...
+  ........c.............n.....Q.....................
+  .....N...............B............g..7....t.......
+  ..........B.........P.......G.....................
+  ..m...........................Q...................
+  .............m.....................p...........F..
+  .....M..B......Q..i.....................7.4.......
+  ............M..................7..................
+  ...........n......................................
+  ................................p.....6.F.7.......
+  ..........M...........p.........6.................
+  .M............i...................................
+  ..............................G...................
+  ..............li.......................6..........
+  .....9.....................i...6..................
+  .....n.............................9..............
+#+END_SRC
+
+
+* Execution
+
+#+BEGIN_example
+............
+........0...
+.....0......
+.......0....
+....0.......
+......A.....
+............
+............
+........A...
+.........A..
+............
+............
+#+END_example
+
+
+#+BEGIN_SRC bash :results output
+  guile3.0 --auto-compile resonant-collinearity.scm example.dat
+  guile3.0 --auto-compile resonant-collinearity.scm input.dat
+#+END_SRC
+
+#+RESULTS:
+: Part One: Resonant Collinearity in "example.dat": 14
+: Part Two: Resonant Collinearity in "example.dat": 34
+: Part One: Resonant Collinearity in "input.dat": 280
+: Part Two: Resonant Collinearity in "input.dat": 958
