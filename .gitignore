@@ -2,5 +2,7 @@
 
 *.scm
 *.dat
+*.sql
+*.awk
 
 template*.org
