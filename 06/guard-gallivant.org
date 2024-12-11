@@ -1,0 +1,740 @@
+#+TITLE: Advent of Code 2024
+#+SUBTITLE: Day 6: Guard Gallivant
+#+AUTHOR: Michael R. Mauger
+#+DATE: [Sat Dec  7 01:06:15 EST 2024]
+#+STARTUP: showeverything inlineimages
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+#+OPTIONS: num:nil
+
+#+AUTO_TANGLE: t
+#+PROPERTY: header-args    :tangle no
+#+PROPERTY: header-args    :noweb no-export
+
+* Day 6: Guard Gallivant
+
+The Historians use their fancy device again, this time to whisk you
+all away to the North Pole prototype suit manufacturing lab... in the
+year 1518! It turns out that having direct access to history is very
+convenient for a group of historians.
+
+You still have to be careful of time paradoxes, and so it will be
+important to avoid anyone from 1518 while The Historians search for
+the Chief. Unfortunately, a single guard is patrolling this part of
+the lab.
+
+Maybe you can work out where the guard will go ahead of time so that
+The Historians can search safely?
+
+You start by making a map (your puzzle input) of the situation. For
+example:
+
+#+BEGIN_SRC text :tangle example.dat
+....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...
+#+END_SRC
+
+The map shows the current position of the guard with ^ (to indicate
+the guard is currently facing up from the perspective of the map). Any
+obstructions - crates, desks, alchemical reactors, etc. - are shown as
+#.
+
+Lab guards in 1518 follow a very strict patrol protocol which involves
+repeatedly following these steps:
+
++ If there is something directly in front of you, turn right 90 degrees.
++ Otherwise, take a step forward.
+
+Following the above protocol, the guard moves up several times until
+she reaches an obstacle (in this case, a pile of failed suit
+prototypes):
+
+#+begin_example
+....#.....
+....^....#
+..........
+..#.......
+.......#..
+..........
+.#........
+........#.
+#.........
+......#...
+#+end_example
+
+Because there is now an obstacle in front of the guard, she turns
+right before continuing straight in her new facing direction:
+
+#+begin_example
+....#.....
+........>#
+..........
+..#.......
+.......#..
+..........
+.#........
+........#.
+#.........
+......#...
+#+end_example
+
+Reaching another obstacle (a spool of several very long polymers), she
+turns right again and continues downward:
+
+#+begin_example
+....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#......v.
+........#.
+#.........
+......#...
+#+end_example
+
+This process continues for a while, but the guard eventually leaves
+the mapped area (after walking past a tank of universal solvent):
+
+#+begin_example
+....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#........
+........#.
+#.........
+......#v..
+#+end_example
+
+By predicting the guard's route, you can determine which specific
+positions in the lab will be in the patrol path. Including the guard's
+starting position, the positions visited by the guard before leaving
+the area are marked with an X:
+
+#+begin_example
+....#.....
+....XXXXX#
+....X...X.
+..#.X...X.
+..XXXXX#X.
+..X.X.X.X.
+.#XXXXXXX.
+.XXXXXXX#.
+#XXXXXXX..
+......#X..
+#+end_example
+
+In this example, the guard will visit 41 distinct positions on your
+map.
+
+Predict the path of the guard. How many distinct positions will the
+guard visit before leaving the mapped area?
+
+** Part Two
+
+While The Historians begin working around the guard's patrol route,
+you borrow their fancy device and step outside the lab. From the
+safety of a supply closet, you time travel through the last few months
+and record the nightly status of the lab's guard post on the walls of
+the closet.
+
+Returning after what seems like only a few seconds to The Historians,
+they explain that the guard's patrol area is simply too large for them
+to safely search the lab without getting caught.
+
+Fortunately, they are pretty sure that adding a single new obstruction
+won't cause a time paradox. They'd like to place the new obstruction
+in such a way that the guard will get stuck in a loop, making the rest
+of the lab safe to search.
+
+To have the lowest chance of creating a time paradox, The Historians
+would like to know all of the possible positions for such an
+obstruction. The new obstruction can't be placed at the guard's
+starting position - the guard is there right now and would notice.
+
+In the above example, there are only 6 different positions where a new
+obstruction would cause the guard to get stuck in a loop. The diagrams
+of these six situations use O to mark the new obstruction, | to show a
+position where the guard moves up/down, - to show a position where the
+guard moves left/right, and + to show a position where the guard moves
+both up/down and left/right.
+
+Option one, put a printing press next to the guard's starting
+position:
+
+#+begin_example
+....#.....
+....+---+#
+....|...|.
+..#.|...|.
+....|..#|.
+....|...|.
+.#.O^---+.
+........#.
+#.........
+......#...
+#+end_example
+
+Option two, put a stack of failed suit prototypes in the bottom right
+quadrant of the mapped area:
+
+#+begin_example
+....#.....
+....+---+#
+....|...|.
+..#.|...|.
+..+-+-+#|.
+..|.|.|.|.
+.#+-^-+-+.
+......O.#.
+#.........
+......#...
+#+end_example
+
+Option three, put a crate of chimney-squeeze prototype fabric next to
+the standing desk in the bottom right quadrant:
+
+#+begin_example
+....#.....
+....+---+#
+....|...|.
+..#.|...|.
+..+-+-+#|.
+..|.|.|.|.
+.#+-^-+-+.
+.+----+O#.
+,#+----+...
+......#...
+#+end_example
+
+Option four, put an alchemical retroencabulator near the bottom left
+corner:
+
+#+begin_example
+....#.....
+....+---+#
+....|...|.
+..#.|...|.
+..+-+-+#|.
+..|.|.|.|.
+.#+-^-+-+.
+..|...|.#.
+#O+---+...
+......#...
+#+end_example
+
+Option five, put the alchemical retroencabulator a bit to the right
+instead:
+
+#+begin_example
+....#.....
+....+---+#
+....|...|.
+..#.|...|.
+..+-+-+#|.
+..|.|.|.|.
+.#+-^-+-+.
+....|.|.#.
+#..O+-+...
+......#...
+#+end_example
+
+Option six, put a tank of sovereign glue right next to the tank of
+universal solvent:
+
+#+begin_example
+....#.....
+....+---+#
+....|...|.
+..#.|...|.
+..+-+-+#|.
+..|.|.|.|.
+.#+-^-+-+.
+.+----++#.
+,#+----++..
+......#O..
+#+end_example
+
+It doesn't really matter what you choose to use as an obstacle so long
+as you and The Historians can put it into position without the guard
+noticing. The important thing is having enough options that you can
+find one that minimizes time paradoxes, and in this example, there are
+6 different positions you could choose.
+
+You need to get the guard stuck in a loop by adding a single new
+obstruction. How many different positions could you choose for this
+obstruction?
+
+* Solution
+** Part One
+1. Read the data, load into a 2-dimensional character array. Each cell
+   in the array is an ~.~, ~#~, and eventually ~X~.
+2. Locate the initial ~^~; represent the location of the guard in a list
+   ~(R . C)~ where ~R, C~ represents where the guard is. At that cell
+   there is a value that represents the direction of the next move; it
+   is one of ~^~, ~v~, ~<~, ~>~.
+3. Iterate until the guard location is no longer on the map (i.e., the
+   row or column is -1 or is equal to the array length in that
+   direction). The contents of the next location is evaluated, if it
+   is ~.~ or ~X~, then the location is at is set to ~X~, the directional
+   indicator is moved to the new location, and the ~R,C~ values are
+   updated. If the destination cell is ~#~ then the direction is
+   progressed thru the sequence ~^~ → ~>~ → ~v~ → ~<~ → ~^~.... and then the
+   position and direction are evaluated again.
+4. Count how many positions on the map were walked upon by counting
+   the ~X~ s in the map.
+
+** COMMENT Part Two
+1. We repeat the first two steps above.
+2. We iterate thru each empty slot on the map and put an obstacle on
+   it. We then test whether they guard will loop or exit. We detect
+   them looping by setting the map cell to the list of directions the
+   guard was going as they passed the cell. If they pass it again in
+   the same direction, then they are looping.
+3. We then report on how many maps with one additional obstacle
+   ended in a loop.
+
+* Implementation
+
+#+BEGIN_SRC scheme :tangle guard-gallivant.scm
+  ;; Advent of Code 2024 -- Code challenge for December 06, 2024
+  ;; Copyright (C) 2024  Michael R. Mauger
+
+  ;; This program is free software: you can redistribute it and/or modify
+  ;; it under the terms of the GNU General Public License as published by
+  ;; the Free Software Foundation, either version 3 of the License, or
+  ;; (at your option) any later version.
+
+  ;; This program is distributed in the hope that it will be useful,
+  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ;; GNU General Public License for more details.
+
+  ;; You should have received a copy of the GNU General Public License
+  ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  (use-modules (srfi srfi-1))  ;; base list
+  (use-modules (srfi srfi-9))  ;; record types
+  (use-modules (srfi srfi-13)) ;; string functions
+  (use-modules (srfi srfi-41)) ;; streams
+
+  (use-modules (ice-9 format)) ;; Guile format
+
+  <<read-file>>
+  <<parse-map>>
+  <<locate-initial-position>>
+  <<guard-the-lab>>
+  <<count-patrolled-squares>>
+  <<try-obstructions>>
+
+  (define input-file
+    (let getopts ((args (cdr (command-line))))
+      (if (null? args)
+          "input.dat"
+          (if (string=? "--" (car args))
+              (getopts (cdr args))
+              (car args)))))
+
+  (format #t "Part One: Day 6: Guard Gallivant in ~s: ~s~%"
+          input-file
+          (count-patrolled-squares
+           (guard-the-lab
+            (locate-initial-position
+             (parse-map
+              (read-file/s input-file))))))
+
+  (format #t "Part Two: Day 6: Guard Gallivant with obstacles in ~s: ~s~%"
+          input-file
+          (try-obstructions
+           (locate-initial-position
+            (parse-map
+             (read-file/s input-file)))))
+
+#+END_SRC
+
+** Part One
+*** Read the data
+#+NAME: read-file
+#+BEGIN_SRC scheme
+  (define-stream (read-file/s filename)
+    (let ((p (open-input-file filename)))
+      (let loop ((c (read-char p))
+                 (line '()))
+        (cond
+         ((eof-object? c)
+          (close-input-port p)
+          stream-null)
+         ((char=? c #\newline)
+          (stream-cons (list->string (reverse line))
+                       (loop (read-char p) '())))
+         (else
+          (loop (read-char p) (cons c line)))))))
+
+#+END_SRC
+
+*** Make map into an array
+#+NAME: parse-map
+#+BEGIN_SRC scheme
+  (define (parse-map data)
+    (list->array 2 (map string->list (stream->list data))))
+
+#+END_SRC
+
+*** Locate the initial position
+#+NAME: locate-initial-position
+#+BEGIN_SRC scheme
+  (define guard '(r . c))
+
+  (define direction
+    '((#\^ -1  0)  ;; in 90° right turn order
+      (#\>  0  1)
+      (#\v  1  0)
+      (#\<  0 -1)))
+
+  (define (locate-initial-position map-array)
+    (let* ((shape (array-shape map-array))
+           (row-shape (car shape))
+           (col-shape (cadr shape)))
+      (catch 'guard
+        (lambda ()
+          (let row-iter ((r (car row-shape)))
+            (when (<= r (cadr row-shape))
+              (let col-iter ((c (car col-shape)))
+                (when (<= c (cadr col-shape))
+                  (if (member (array-ref map-array r c)
+                              (map car direction))
+                      (throw 'guard (cons r c))
+                      (col-iter (1+ c)))))
+              (row-iter (1+ r)))))
+        (lambda (exn args)
+          (set! guard args)
+          #f)))
+    map-array)
+
+#+END_SRC
+
+*** Perform one step
+Either move or rotate; return true if we are still on the map
+#+NAME: one-step
+#+BEGIN_SRC scheme
+  (define (one-step map-data)
+      (let* ((r (car guard))
+           (c (cdr guard))
+           (here (array-ref map-array r c))
+           (here-c (if (list? here) (car here) here))
+           (dir  (assoc here-c direction))
+           (roff (cadr dir))
+           (coff (caddr dir))
+           (next-r (+ r roff))
+           (next-c (+ c coff))
+           (next-here (delete-duplicates
+                       (append '(#\X)
+                               (if (list? here) here (list here))))))
+
+    (array-set! map-array next-here r c)
+    (if (array-in-bounds? map-array next-r next-c)
+        (let* ((there (array-ref map-array next-r next-c))
+               (there-c (if (list? there) (car there) there)))
+          (if (member there-c '(#\# #\O))
+              <<turn-right>>
+              <<move-forward>>)
+          #t)
+        #f)))
+
+#+END_SRC
+
+**** Turn Right
+We need to turn right. Lookup the current direction and take the next
+one (wrap around the list))
+#+NAME: turn-right
+#+BEGIN_SRC scheme
+  (let ((next-dir (delete-duplicates
+                   (append
+                    (list (cadr (member here-c
+                                        (append (map car direction)
+                                                (list (caar direction))))))
+                    (if (list? here)
+                        here
+                        (list here))))))
+    (array-set! map-array next-dir r c))
+
+#+END_SRC
+
+**** Move Forward
+We are going to move, so mark the current location as having been
+occupied, and try to move. If we are off the map indicate it,
+otherwise update the guards location and move the direction marker.
+#+NAME: move-forward
+#+BEGIN_SRC scheme
+  (let ((next-there (delete-duplicates
+                     (append (list here-c)
+                             (if (list? there) there (list there))))))
+    (set! guard (cons next-r next-c))
+    (array-set! map-array next-there next-r next-c)
+    (when (member here-c (if (list? there) there (list there)))
+      (display (list "LOOPING>" next-r next-c (member here-c (if (list? there) there (list there))) here-c there))(newline)
+      (raise-exception (make-exception 'looping next-r next-c))))
+
+#+END_SRC
+
+*** Guard the lab
+#+NAME: guard-the-lab
+#+BEGIN_SRC scheme
+  (define (guard-the-lab map-array)
+    (let ((n-steps 0))
+      <<one-step>>
+
+      (while (one-step map-array)
+        (set! n-steps (1+ n-steps)))
+      map-array))
+
+#+END_SRC
+
+*** Count Patrolled Squares
+#+NAME: count-patrolled-squares
+#+BEGIN_SRC scheme
+  (define (count-patrolled-squares map-array)
+    ;; <<print-map>>
+    ;; (print-map map-array)
+
+    (let ((count 0))
+      (define (patrolled? c)
+        (member #\X (if (list? c) c (list c))))
+
+      (define (count-patrolled c)
+         (when (patrolled? c)
+           (set! count (1+ count))))
+
+      (array-for-each count-patrolled map-array)
+      count))
+
+#+END_SRC
+
+*** Print map
+#+NAME: print-map
+#+BEGIN_SRC scheme
+  (define (print-map map-array)
+    (let* ((shape (array-shape map-array))
+           (row-shape (car shape))
+           (col-shape (cadr shape)))
+      (let row-iter ((r (car row-shape)))
+        (when (<= r (cadr row-shape))
+          (let col-iter ((c (car col-shape)))
+            (when (<= c (cadr col-shape))
+              (col-iter (1+ c))))
+          (newline)
+          (row-iter (1+ r)))))
+    map-array)
+
+#+END_SRC
+
+** Part Two
+
+*** Try with one obstruction
+#+NAME: does-it-loop-with-obstruction-at
+#+BEGIN_SRC scheme
+  (define (does-it-loop-with-obstruction-at? map-array r c)
+    (if (char=? (array-ref map-array r c) #\.)
+        (with-exception-handler
+            (lambda (exn)
+              (display (list "exception thrown" (exception-kind exn) (exception-args exn))) (newline)
+              (if (eq? (exception-kind exn) '%exception)
+                  (eq? (exception-args exn) '(looping))
+                  (raise-exception exn)))
+          (let ((new-map (apply make-array #t (array-shape map-array))))
+            (display (list "guard:" guard)) (newline)
+            (array-copy! map-array new-map)
+            (array-set! new-map #\O r c)
+            (guard-the-lab new-map)
+            #f)
+          #:unwind? #t)
+        #f))
+
+#+END_SRC
+
+*** Try every obstruction
+#+NAME: try-obstructions
+#+BEGIN_SRC scheme
+  <<does-it-loop-with-obstruction-at>>
+
+  (define (try-obstructions map-array)
+      (let* ((count 0)
+             (new-guard guard)
+             (shape (array-shape map-array))
+             (row-shape (car shape))
+             (col-shape (cadr shape)))
+        (let row-iter ((r (car row-shape)))
+          (when (<= r (cadr row-shape))
+            (let col-iter ((c (car col-shape)))
+              (when (<= c (cadr col-shape))
+                (display (list "obstruct" r c))(newline)
+                (set! guard new-guard)
+                (when (does-it-loop-with-obstruction-at? map-array r c)
+                  (display (list "looping" r c))(newline)
+                  (set! count (1+ count)))
+                (col-iter (1+ c))))
+            (row-iter (1+ r))))
+        count))
+
+#+END_SRC
+
+* Data
+
+#+BEGIN_SRC text :tangle input.dat
+  ...#..................#...................#......................#..............................#.............................#...
+  ....#.......................#........#.#..............##...........#.....#..........#..........................#..................
+  .............#........................................................................#.........#.#..#..#..........#..............
+  ..........#.......#..........#..................#........##...................#..............#....................................
+  ....................#..........................................................#..#.....................................#.........
+  ....#............................#..............................................#.....................#..........##....#..........
+  .......#.............#......................................................................#.............#.........#.............
+  ....###......................#....#...........#.....#................................#..........................#.................
+  ..........#..#...........#..#........................................................#.....#...........#................#.........
+  ..#....#......#....#....#...................................................................#.....................................
+  ....................#............#............................................#......#....#...............................#.......
+  ..........#.......#.........#.......#.............................................................................................
+  .......#...#.......................................#...................#..........................................................
+  .......#........#............................#.....#.......#..............................................#..................#...#
+  .....................#.................................#................#...#...............#.....#.#..........................#..
+  .....#..........................................#......................#.............##..............................#........#...
+  .....#......#.........................#..........................#..........................................................#..#..
+  .#......#.............#......#.................................................#.....#...................##......#................
+  .............................................................................##...................................................
+  ........................................#.......................................#........#.............................#.#.......#
+  ...........#.....................................#.............................#......#......#..#....................#..#.........
+  .............................................#.......................#..................##....#.....#.............................
+  ........................#..............................................................#..........................................
+  #..............#.........................#........#...#...............#..............#..................#....................##...
+  ...#...#.............................#.......#................................................#........................#....#.....
+  .....#.........................#..#.......................#..........#.....................#..................#.#.....#...........
+  ..................#........#..#.......#...................................................................................#....#..
+  ..#...#...............................................#.#..#........................................................#....#......#.
+  ...............#...............#..........................#............................#..........#.............#.................
+  ............#.....#........#.........................................................#........#........#.....#........#......#....
+  ............................#.........#....#........#.....#...#.............#.................................#...................
+  ........#..................#....#..........................................................#.#.#..................................
+  ....................................................................................................................#.............
+  #............#.............#..................#......................................................................#............
+  ...............................#....#..........#...........##........................................................#.........#.#
+  ................#.........................................#.................................................#........#............
+  ..............................................#............#................#........#........................#...................
+  ..................#.........#..........................#.............#...............#............#....................#..........
+  ........................#...#...............................................#..............#.....#.....................#..........
+  ...........#.......................................#..............................#..................#....#...##..................
+  #...............#..................#...............................#...............................#.....................#........
+  .............#...............................................................##...................................................
+  .................#.............#.......................#...#............#.#....#................................#...........#.....
+  #......#......#..................................##.................#.#...............................#...........................
+  .#...............#..........#...............................................#...#..........#..........#...........................
+  .....................................#............................#....#.............................................#...#........
+  ......#...#.............#.#....................#.........#..........##.................................#..........#..........#....
+  .............................#..................#....#..............##.......................#.#.....#........#...................
+  .................................................#.#......................................................#................#......
+  ......................................#..........................................#......#.........................................
+  #....................#...........................................................#..................#.............................
+  .....#.........#...................................................#....#.#....#.#.........#......................................
+  ........#..........#......#.............#................................#.....#................#.................................
+  ...........#................................#...........#..........#......#.............#........................#................
+  .......#...............#....................#..#................................................#.................................
+  .....................#.........#..#............#..........#...........#...........#...............................#...............
+  ................#...#........#...........#..........................................................#..#...................#......
+  .........................................................#.....................#...#......................#.#....................#
+  ................#......#....#.#..............#............#.......................................................................
+  ..........#.....................................#......................................................................#..........
+  #......................................#.......#.....##..#.....................#.........#.......#................................
+  ........#...#..............#....................#................................#..............................................#.
+  .##............................................................................#......#................................#..........
+  .#........................#..............#..............................................#........#.....#.......#..................
+  #......................................#.....................#...................................................................#
+  ............................#.....#.....#............#...............#...#.......#.........#......................................
+  .#.........................#.......................#.........#.......#.................#............................#..#..........
+  .............................................................................................................#........##..........
+  ...........#...#...#.#................#.....................................#........#............................................
+  ......#.......................#..........#.......#................................................................#...............
+  ........#....#........#..................#....##.....#............#..............................#...........#...........#..#.....
+  ..................................#...............................................................................#...............
+  .....................#.#.......................#....................................#.............................................
+  ........................................................................................#.........#.................#.........#...
+  ..........................#..........#....#..........................................#.......................#............#.#.....
+  ...............................................#.#....#...............................#...................#......................#
+  .....#...........#........#.#.......#.............................#..................#............................................
+  ...............#.........................................................#....................#.................#.............#...
+  #....................................##..........#................................................................#...............
+  ...............#.................#...#..............#......................................................#..............#.......
+  ...................#......#.............................................#......................................................#.#
+  ..#.............#.......#......#....#..#..#.......................................................................................
+  .........#....................................................#.....................................#..............#..............
+  ..............#..............#................................................................#.......................#...........
+  ..........................#.................#.......................................................##...................#.#......
+  ...............#..#...................................................................................................#.......###.
+  ...#.....................#..#........#..........#..................................................................##.............
+  .................#.......................................###..............#.........................#.............................
+  ...#.....................................................#.......#..........................#................#..#.................
+  ...................................................#..................#.........................................................#.
+  .....#.............#...................#...................#.....................................#................................
+  .....................#.........................#......#...........................................................................
+  ...........#...............#......#.....##...#...#.............................................#........#.#...............#...#...
+  ..............#..............##...........#.......................#..#.^..........................................................
+  ...................#..............................................................................................................
+  ..................#.......#..........#.......#..................#..........#...................................#..................
+  ..............................................................................................#..................................#
+  ......................................................#................#......................#...................................
+  ..............#.........#..............................#.....................#......................#.............................
+  #................#.........#................#.............................#......................#..#...#..............#..........
+  .#..#........#................#...............#..................#........#.....................#............#........#...........
+  .....................................................#.#.........#......................#.............................#........#..
+  ......................#.....................#..#......#..........................#............................#......#............
+  ......................#.........................#..#..................................#.......................#..............#....
+  ..........................#..................#.............#......................................................#...............
+  ..........................#....#........................................#..#...#....#.................#...........................
+  .......#...........#.......................#............##........#....................................................#..........
+  #..........................................................................#...........#..........................................
+  ............................................................#.................#..#........................................##......
+  ..#...............................................#....#.................................................##.....#...##.....#......
+  ...#.....##..............................#.........................................................#............#.................
+  .....#....##............................#....##..........#...#....................................................................
+  ..................................................#..........................#.........##.......#.......................#.........
+  .........#.....#..........#........#........................#.##..#............#.......................................#..........
+  .....#...............#.......#..........#.#..........#.....................#.....................................#.....#..........
+  ....#......#............................................................................................##...#.#.#.........#......
+  ...........#........................#.....#....................#..................#.#........#....................................
+  ....................................................#................#.#................................................#.........
+  ..........#..............#.......................#.................#...................................#.............#.#......##..
+  ................##......................................................#.................#.......#.#....................#........
+  ................#......................................................#.............##...............#.....#......#.......#......
+  ..............................#............................#..........#...........#...............................................
+  .......#.............#....................................................................#..............................#.#......
+  ...#.....................#.#...............................................................#...#..#....#..........................
+  ....#.........##......#..............................................................................#..................#.........
+  ....#..........................................#......#...................#........##............#................................
+  ..#.......#......#............#........#...#.#...........................#.......#................................................
+  ..........................#...#....................#...............#...#......#.#...#...#...............#.#.#.....................
+  ....##.#....................................................................#...#.....##........................#.##..............
+  .............................................#....................................................................................
+#+END_SRC
+
+
+* Execution
+
+#+BEGIN_SRC bash :results output
+  guile3.0 --no-auto-compile --r7rs guard-gallivant.scm example.dat
+  # guile3.0 --no-auto-compile --r7rs guard-gallivant.scm input.dat
+#+END_SRC
+
+#+RESULTS:
+: Part One: Day 6: Guard Gallivant in "example.dat": 41
+: (obstruct 0 0)
+: (guard: (6 . 4))
+: (exception thrown wrong-type-arg (#f Wrong type to apply: ~S (#f) (#f)))
