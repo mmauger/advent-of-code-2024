@@ -4,5 +4,6 @@
 *.dat
 *.sql
 *.awk
+*.db
 
 template*.org
