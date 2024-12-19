@@ -1,0 +1,486 @@
+#+TITLE: Advent of Code 2024
+#+SUBTITLE: Day 11: Plutonian Pebbles
+#+AUTHOR: Michael R. Mauger
+#+DATE: [Fri Dec 13 16:15:09 EST 2024]
+#+STARTUP: showeverything inlineimages
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+#+OPTIONS: num:nil
+
+#+AUTO_TANGLE: t
+#+PROPERTY: header-args    :tangle no
+#+PROPERTY: header-args    :noweb no-export
+
+* Day 11: Plutonian Pebbles
+
+The ancient civilization on Pluto was known for its ability to
+manipulate spacetime, and while The Historians explore their infinite
+corridors, you've noticed a strange set of physics-defying stones.
+
+At first glance, they seem like normal stones: they're arranged in a
+perfectly straight line, and each stone has a number engraved on it.
+
+The strange part is that every time you blink, the stones change.
+
+Sometimes, the number engraved on a stone changes. Other times, a
+stone might split in two, causing all the other stones to shift over a
+bit to make room in their perfectly straight line.
+
+As you observe them for a while, you find that the stones have a
+consistent behavior. Every time you blink, the stones each
+simultaneously change according to the first applicable rule in this
+list:
+
++ If the stone is engraved with the number 0, it is replaced by a
+  stone engraved with the number 1.
++ If the stone is engraved with a number that has an even number of
+  digits, it is replaced by two stones. The left half of the digits
+  are engraved on the new left stone, and the right half of the digits
+  are engraved on the new right stone. (The new numbers don't keep
+  extra leading zeroes: 1000 would become stones 10 and 0.)
++ If none of the other rules apply, the stone is replaced by a new
+  stone; the old stone's number multiplied by 2024 is engraved on the
+  new stone.
+
+No matter how the stones change, their order is preserved, and they
+stay on their perfectly straight line.
+
+How will the stones evolve if you keep blinking at them? You take a
+note of the number engraved on each stone in the line (your puzzle
+input).
+
+If you have an arrangement of five stones engraved with the numbers ~0
+1 10 99 999~ and you blink once, the stones transform as follows:
+
++ The first stone, 0, becomes a stone marked 1.
++ The second stone, 1, is multiplied by 2024 to become 2024.
++ The third stone, 10, is split into a stone marked 1 followed by a
+  stone marked 0.
++ The fourth stone, 99, is split into two stones marked 9.
++ The fifth stone, 999, is replaced by a stone marked 2021976.
+
+So, after blinking once, your five stones would become an arrangement
+of seven stones engraved with the numbers
+
+#+begin_example
+1 2024 1 0 9 9 2021976
+#+END_example
+
+Here is a longer example:
+
+#+BEGIN_SRC text :tangle example.dat
+  125 17
+#+END_SRC
+
+#+begin_example
+Initial arrangement:
+125 17
+
+After 1 blink:
+253000 1 7
+
+After 2 blinks:
+253 0 2024 14168
+
+After 3 blinks:
+512072 1 20 24 28676032
+
+After 4 blinks:
+512 72 2024 2 0 2 4 2867 6032
+
+After 5 blinks:
+1036288 7 2 20 24 4048 1 4048 8096 28 67 60 32
+
+After 6 blinks:
+2097446912 14168 4048 2 0 2 4 40 48 2024 40 48 80 96 2 8 6 7 6 0 3 2
+#+end_example
+
+In this example, after blinking six times, you would have 22
+stones. After blinking 25 times, you would have 55312 stones!
+
+Consider the arrangement of stones in front of you. How many stones
+will you have after blinking 25 times?
+
+** Part Two
+
+The Historians sure are taking a long time. To be fair, the infinite
+corridors are very large.
+
+How many stones would you have after blinking a total of 75 times?
+
+* Solution
+** Part One
+1. Read the data in ~awk~
+
+** Part Two
+1. Just run with 75 loops
+
+** On sqlite
+The number of stones in the 75 case exceeds memory capacity in
+Guile. So instead, we'll try to implement it in sqlite. To avoid
+memory issues, the db will be stored on disk and purged after each blink.
+
+* Implementation
+
+#+BEGIN_SRC scheme :tangle plutonian-pebbles.scm
+  ;; Advent of Code 2024 -- Code challenge for December 11, 2024
+  ;; Copyright (C) 2024  Michael R. Mauger
+
+  ;; This program is free software: you can redistribute it and/or modify
+  ;; it under the terms of the GNU General Public License as published by
+  ;; the Free Software Foundation, either version 3 of the License, or
+  ;; (at your option) any later version.
+
+  ;; This program is distributed in the hope that it will be useful,
+  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ;; GNU General Public License for more details.
+
+  ;; You should have received a copy of the GNU General Public License
+  ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  (use-modules (srfi srfi-1))  ;; base list
+  (use-modules (srfi srfi-9))  ;; record types
+  (use-modules (srfi srfi-13)) ;; string functions
+
+  (use-modules (ice-9 rdelim))
+  (use-modules (ice-9 format)) ;; Guile format
+
+  <<read-stones>>
+  <<blink-at-stones>>
+
+  (define input-file
+    (let getopts ((args (cdr (command-line))))
+      (if (null? args)
+          "input.dat"
+          (if (string=? "--" (car args))
+              (getopts (cdr args))
+              (car args)))))
+
+  (format #t "Part One: Plutonian Pebbles in ~s (6 blinks): ~s~%"
+          input-file
+          (length
+           (blink-at-stones
+            6
+            (read-stones input-file))))
+
+  (format #t "Part One: Plutonian Pebbles in ~s (25 blinks): ~s~%"
+          input-file
+          (length
+           (blink-at-stones
+            25
+            (read-stones input-file))))
+
+  ;; blows up with 75 blinks out-of-memory...
+  ;; (format #t "Part Two: Plutonian Pebbles in ~s (75 blinks): ~s~%"
+  ;;         input-file
+  ;;         (length
+  ;;          (blink-at-stones
+  ;;           75
+  ;;           (read-stones input-file))))
+
+#+END_SRC
+
+** Part One
+*** Read the data
+#+NAME: read-stones
+#+BEGIN_SRC scheme
+  (define (read-stones file)
+    (call-with-input-file file
+      (lambda (port)
+        (map string-trim
+             (string-split (read-line port) #\space)))))
+
+#+END_SRC
+
+*** Blink at the stones
+#+NAME: blink-at-stones
+#+BEGIN_SRC scheme
+  (define (blink-at-stones n the-stones)
+    (define (blink stones)
+      <<one-stone>>
+      ;; (display (list n stones))(newline)
+      (append-map one-stone stones))
+
+    (if (= n 0)
+        the-stones
+        (blink-at-stones (1- n) (blink the-stones))))
+
+#+END_SRC
+
+#+NAME: one-stone
+#+BEGIN_SRC scheme
+  (define (one-stone stone)
+    (cond
+     ((string=? stone "0")
+      (list "1"))
+     ((even? (string-length stone))
+      (let ((len/2 (/ (string-length stone) 2)))
+        (list
+         (substring stone 0 len/2)
+         (let ((s (string-trim (substring stone len/2) #\0)))
+           (if (string-null? s) "0" s)))))
+     (else
+      (list (number->string
+             (* 2024
+                (string->number stone)))))))
+
+#+END_SRC
+
+* Implementation with a database
+
+#+BEGIN_SRC sqlite :tangle plutonian-pebbles.sql
+  -- Advent of Code 2024 -- Code challenge for December 11, 2024
+  -- Copyright (C) 2024  Michael R. Mauger
+
+  -- This program is free software: you can redistribute it and/or modify
+  -- it under the terms of the GNU General Public License as published by
+  -- the Free Software Foundation, either version 3 of the License, or
+  -- (at your option) any later version.
+
+  -- This program is distributed in the hope that it will be useful,
+  -- but WITHOUT ANY WARRANTY; without even the implied warranty of
+  -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  -- GNU General Public License for more details.
+
+  -- You should have received a copy of the GNU General Public License
+  -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  PRAGMA journal_mode=WAL;
+  -- .open --new plutonian-pebbles.db
+  .open --new :memory:
+
+  .mode qbox
+  .changes on
+  .timer on
+  .echo off
+
+  CREATE TABLE stones
+  (   blink_no            INT
+  ,   digits              TEXT
+  );
+
+  <<load-db-stones>>
+  <<blink-db-stones>>
+
+  SELECT DATETIME();
+  SELECT COUNT (*) "Part Zero: Plutonian Pebbles for 6 blinks" FROM
+  ( SELECT * FROM blink_stones LIMIT 1000 )
+  WHERE blink_no = 6;
+
+  SELECT DATETIME();
+  SELECT COUNT (*) "Part One: Plutonian Pebbles for 25 blinks" FROM
+  ( SELECT * FROM blink_stones LIMIT 1000000 )
+  WHERE blink_no = 25;
+
+  SELECT DATETIME();
+  SELECT COUNT (*) "Part Two: Plutonian Pebbles for 75 blinks" FROM
+  ( SELECT * FROM blink_stones LIMIT 10000000000 )
+  WHERE blink_no = 75;
+
+  SELECT DATETIME();
+
+  .stats
+
+#+END_SRC
+
+** Part One
+*** Load the initial stones
+
+#+NAME: load-db-stones
+#+BEGIN_SRC sqlite
+  .import --csv '| awk -f load-stones.awk $LOAD_FILE' stones
+  SELECT COUNT (*) FROM stones;
+
+#+END_SRC
+
+#+BEGIN_SRC awk :tangle load-stones.awk
+  BEGIN {
+      OFS = ","
+  }
+
+  {
+      for (i = 1; i<= NF; ++i) {
+          print 0, "\"" $i "\""
+      }
+  }
+
+#+END_SRC
+
+*** Blink the stones once
+#+NAME: blink-db-stones
+#+BEGIN_SRC sqlite
+  CREATE VIEW blink_stones
+  (   blink_no
+  ,   digits
+  )
+  AS
+  WITH
+      RECURSIVE blink
+      (   blink_no
+      ,   digits
+      )
+  AS not MATERIALIZED
+  (   SELECT
+          blink_no
+      ,   digits
+      FROM
+          stones
+  UNION ALL
+      -- (   WITH
+      --         blink_recurse
+      --     AS
+      --     (   SELECT
+      --             blink_no
+      --         ,   digits
+      --         FROM
+      --             blink
+      --     )
+          SELECT
+              blink_no + 1  AS blink_no
+          ,   CASE
+              WHEN digits = '0'
+                  THEN '1'
+              WHEN LENGTH (digits) % 2 = 0
+                  THEN SUBSTRING (digits, 1, LENGTH (digits) / 2)
+                  ELSE CAST ((CAST (digits AS INTEGER) * 2024) AS TEXT)
+              END  AS digits
+          FROM
+              -- blink_recurse
+              blink
+      UNION ALL
+          SELECT
+              blink_no + 1  AS blink_no
+          ,   CAST ((CAST (SUBSTRING (digits, 1 + LENGTH (digits) / 2)
+                    AS INTEGER)) AS TEXT)  AS digits
+          FROM
+              -- blink_recurse
+              blink
+          WHERE
+              LENGTH (digits) % 2 = 0
+      -- )
+  )
+  SELECT
+      blink_no
+  ,   digits
+  FROM
+      blink
+  ;
+
+#+END_SRC
+
+
+* Data
+
+#+BEGIN_SRC text :tangle input.dat
+  475449 2599064 213 0 2 65 5755 51149
+#+END_SRC
+
+
+* Execution
+
+** With Guile
+#+BEGIN_SRC bash :results output
+  guile3.0 --no-auto-compile --r7rs plutonian-pebbles.scm example.dat
+  guile3.0 --no-auto-compile --r7rs plutonian-pebbles.scm input.dat
+#+END_SRC
+
+#+RESULTS:
+: Part One: Plutonian Pebbles in "example.dat" (6 blinks): 22
+: Part One: Plutonian Pebbles in "example.dat" (25 blinks): 55312
+: Part One: Plutonian Pebbles in "input.dat" (6 blinks): 79
+: Part One: Plutonian Pebbles in "input.dat" (25 blinks): 193269
+
+** With SQLite
+#+BEGIN_SRC bash :results output
+  LOAD_FILE=example.dat sqlite3 < plutonian-pebbles.sql
+  # LOAD_FILE=input.dat   sqlite3 < plutonian-pebbles.sql
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+memory
+Run Time: real 0.001 user 0.000000 sys 0.000157
+changes: 0   total_changes: 0
+┌───────────┐
+│ COUNT (*) │
+├───────────┤
+│ 2         │
+└───────────┘
+Run Time: real 0.000 user 0.000000 sys 0.000026
+changes: 1   total_changes: 2
+Run Time: real 0.000 user 0.000000 sys 0.000171
+changes: 1   total_changes: 2
+┌───────────────────────┐
+│      DATETIME()       │
+├───────────────────────┤
+│ '2024-12-12 17:47:35' │
+└───────────────────────┘
+Run Time: real 0.000 user 0.000000 sys 0.000015
+changes: 1   total_changes: 2
+┌───────────────────────────────────────────┐
+│ Part Zero: Plutonian Pebbles for 6 blinks │
+├───────────────────────────────────────────┤
+│ 22                                        │
+└───────────────────────────────────────────┘
+Run Time: real 0.002 user 0.001021 sys 0.000200
+changes: 1   total_changes: 2
+┌───────────────────────┐
+│      DATETIME()       │
+├───────────────────────┤
+│ '2024-12-12 17:47:35' │
+└───────────────────────┘
+Run Time: real 0.000 user 0.000003 sys 0.000011
+changes: 1   total_changes: 2
+┌───────────────────────────────────────────┐
+│ Part One: Plutonian Pebbles for 25 blinks │
+├───────────────────────────────────────────┤
+│ 55312                                     │
+└───────────────────────────────────────────┘
+Run Time: real 0.977 user 0.961181 sys 0.012832
+changes: 1   total_changes: 2
+┌───────────────────────┐
+│      DATETIME()       │
+├───────────────────────┤
+│ '2024-12-12 17:47:36' │
+└───────────────────────┘
+Run Time: real 0.000 user 0.000027 sys 0.000000
+changes: 1   total_changes: 2
+┌───────────────────────────────────────────┐
+│ Part Two: Plutonian Pebbles for 75 blinks │
+├───────────────────────────────────────────┤
+│ 0                                         │
+└───────────────────────────────────────────┘
+Run Time: real 10704.892 user 10308.276346 sys 316.856105
+changes: 1   total_changes: 2
+┌───────────────────────┐
+│      DATETIME()       │
+├───────────────────────┤
+│ '2024-12-12 20:46:01' │
+└───────────────────────┘
+Run Time: real 0.000 user 0.000114 sys 0.000000
+changes: 1   total_changes: 2
+Memory Used:                         87016 (max 2241104) bytes
+Number of Outstanding Allocations:   291 (max 772)
+Number of Pcache Overflow Bytes:     16960 (max 2055088) bytes
+Largest Allocation:                  87360 bytes
+Largest Pcache Allocation:           4368 bytes
+Lookaside Slots Used:                46 (max 123)
+Successful lookaside attempts:       1411067258
+Lookaside failures due to size:      9
+Lookaside failures due to OOM:       370
+Pager Heap Usage:                    13608 bytes
+Page cache hits:                     20
+Page cache misses:                   0
+Page cache writes:                   0
+Page cache spills:                   0
+Schema Heap Usage:                   8464 bytes
+Statement Heap/Lookaside Usage:      0 bytes
+Bytes received by read():            148405958294
+Bytes sent to write():               225532616252
+Read() system calls:                 36231957
+Write() system calls:                55061685
+Bytes read from storage:             114823602176
+Bytes written to storage:            225034371072
+Cancelled write bytes:               259067904
+#+end_example
